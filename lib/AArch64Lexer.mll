@@ -319,6 +319,7 @@ match name with
 | "stuminb"|"STUMINB" -> STUMINB
 | "stuminlb"|"STUMINLB" -> STUMINLB
 *)
+| "udf"|"UDF" -> UDF
 (* Memory Tagging *)
 | "stg"|"STG" -> STG
 | "stzg"|"STZG" -> STZG
@@ -507,7 +508,7 @@ match name with
 }
 let digit = [ '0'-'9' ]
 let alpha = [ 'a'-'z' 'A'-'Z']
-let name  = alpha (alpha|digit|'_' | '/' | '.' | '-')*
+let name  = (alpha|'_'|'.'|'$') (alpha|digit|'_'|'/'|'.'|'$')*
 let num = digit+
 
 rule token = parse

@@ -15,7 +15,9 @@
 (****************************************************************************)
 
 module Types = struct
-  type annot = A | XA | L | XL | X | N | Q | XQ | NoRet | S
+  type annot =
+      A | XA | L | XL | X | N | Q | XQ | NoRet | S
+    | NTA (* Non-Temporal, avoid clash with NT in AArch64Base *)
   type nexp =  AF|DB|AFDB|Other
   type explicit = Exp | NExp of nexp
   type lannot = annot
@@ -53,6 +55,10 @@ module Make (C:Arch_herd.Config)(V:Value.AArch64) =
 
     let is_speculated = function
       | S -> true
+      | _ -> false
+
+    let is_non_temporal = function
+      | NTA -> true
       | _ -> false
 
     let _is_atomic = function
@@ -99,6 +105,7 @@ module Make (C:Arch_herd.Config)(V:Value.AArch64) =
       "L",  is_release;
       "NoRet", is_noreturn;
       "S", is_speculated;
+      "NT",is_non_temporal;
     ]
 
     let explicit_sets = [
@@ -144,6 +151,7 @@ module Make (C:Arch_herd.Config)(V:Value.AArch64) =
       | N -> ""
       | NoRet -> "NoRet"
       | S -> "^s"
+      | NTA -> "NT"
 
     let pp_explicit = function
       | Exp -> if is_kvm && C.verbose > 2 then "Exp" else ""
@@ -234,6 +242,7 @@ module Make (C:Arch_herd.Config)(V:Value.AArch64) =
       | I_MOV_V _ | I_MOV_VE _ | I_MOV_S _ | I_MOV_TG _ | I_MOV_FG _
       | I_MOVI_S _ | I_MOVI_V _
       | I_EOR_SIMD _ | I_ADD_SIMD _ | I_ADD_SIMD_S _
+      | I_UDF _
           -> None
 
     let all_regs =
@@ -259,7 +268,7 @@ module Make (C:Arch_herd.Config)(V:Value.AArch64) =
       | I_FENCE _
       | I_IC _|I_DC _|I_TLBI _
       | I_NOP|I_TBZ _|I_TBNZ _
-      | I_BL _ | I_BLR _ | I_RET _ | I_ERET
+      | I_BL _ | I_BLR _ | I_RET _ | I_ERET | I_UDF _
         -> [] (* For -variant self only ? *)
       | I_LDR (_,r,_,_,_)|I_LDRBH (_,r,_,_,_)
       | I_LDRS (_,_,r,_)
@@ -343,7 +352,7 @@ module Make (C:Arch_herd.Config)(V:Value.AArch64) =
       | I_MOV _|I_MOVZ _|I_MOVK _|I_SXTW _
       | I_OP3 _|I_ADR _|I_RBIT _|I_FENCE _
       | I_CSEL _|I_IC _|I_DC _|I_TLBI _|I_MRS _|I_MSR _
-      | I_STG _|I_STZG _|I_LDG _
+      | I_STG _|I_STZG _|I_LDG _|I_UDF _
         -> MachSize.No
 
     include ArchExtra_herd.Make(C)
